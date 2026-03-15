@@ -17,6 +17,11 @@ export interface AiResponse {
  * and stream the response back
  */
 export async function askAI(prompt: string): Promise<AiResponse> {
+  const MAX_CHARS = 8000;
+  const safePrompt =
+    prompt.length > MAX_CHARS
+      ? prompt.slice(0, MAX_CHARS) + "\n\n[...truncated for length]"
+      : prompt;
   try {
     const response = await ollama.chat({
       model: MODEL,
@@ -30,7 +35,7 @@ Format your response with clear sections: CAUSE, EXPLANATION, FIX.`,
         },
         {
           role: "user",
-          content: prompt,
+          content: safePrompt,
         },
       ],
     });

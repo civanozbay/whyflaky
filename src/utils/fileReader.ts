@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import type { FailedTest } from "../parsers/cypress.js";
 
 export interface TestFileContext {
   testFilePath: string;
@@ -62,7 +63,7 @@ export function readTestWithContext(testFilePath: string): TestFileContext {
  */
 export function buildContextPrompt(
   context: TestFileContext,
-  errorMessage: string
+  errorMessage: string,
 ): string {
   let prompt = `Here is a failing test and its related source files. Please analyze the failure.
 
@@ -92,6 +93,44 @@ Based on the test code, source code, and error message above:
 1. What is the ROOT CAUSE of this failure?
 2. What is the exact problem in the code?
 3. How should it be fixed?`;
+
+  return prompt;
+}
+
+export function buildPromptFromFailedTest(test: FailedTest): string {
+  let prompt = `You are analyzing a failing Cypress test. Here is everything we know:\n\n`;
+
+  prompt += `TEST: ${test.fullTitle}\n`;
+  prompt += `\nERROR:\n${test.errorMessage}\n`;
+  prompt += `\nSTACK TRACE:\n${test.errorStack}\n`;
+
+  if (test.code) {
+    prompt += `\nTEST CODE SNIPPET (from test runner):\n\`\`\`typescript\n${test.code}\n\`\`\`\n`;
+  }
+
+  if (test.sourceFilePath) {
+    try {
+      const context = readTestWithContext(test.sourceFilePath);
+      prompt += `\nFULL TEST FILE (${path.basename(context.testFilePath)}):\n\`\`\`typescript\n${context.testFileContent}\n\`\`\`\n`;
+
+      if (context.importedFiles.length > 0) {
+        prompt += `\nIMPORTED FILES (page objects, helpers, utilities):\n`;
+        for (const file of context.importedFiles) {
+          prompt += `\nFile: ${path.basename(file.path)}\n\`\`\`typescript\n${file.content}\n\`\`\`\n`;
+        }
+      }
+    } catch {
+      prompt += `\n(Could not read full test file, analyzing from snippet only)\n`;
+    }
+  } else {
+    prompt += `\n(Source file could not be located on disk, analyzing from snippet only)\n`;
+  }
+
+  prompt += `
+Based on all the above:
+1. What is the ROOT CAUSE of this failure?
+2. Is this likely a flaky test, a real bug, or a timing issue?
+3. What is the exact fix?`;
 
   return prompt;
 }

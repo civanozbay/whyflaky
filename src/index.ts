@@ -3,16 +3,15 @@ import { program } from "commander";
 import chalk from "chalk";
 import { explainCommand } from "./commands/explain.js";
 import { analyzeCommand } from "./commands/analyze.js";
+import { runCommand } from "./commands/run.js";
 
-console.log(chalk.cyan.bold("\n🧪 testai — AI-powered test assistant\n"));
+console.log(chalk.cyan.bold("\n🧪 whyflaky — AI-powered test assistant\n"));
 
 program
-  .name("testai")
+  .name("whyflaky")
   .description("AI assistant for test engineers")
   .version("0.1.0");
 
-// Command 1: Explain a test failure
-// Usage: testai explain --file path/to/test.spec.ts
 program
   .command("explain")
   .description("Explain why a test is failing")
@@ -20,8 +19,12 @@ program
   .option("-e, --error <message>", "Paste the error message directly")
   .action(explainCommand);
 
-// Command 2: Analyze test output (coming soon)
-// Usage: testai analyze --output test-results.txt
+program
+  .command("run")
+  .description("Run tests and automatically analyze failures with AI")
+  .option("-s, --spec <path>", "Run a specific spec file")
+  .action(runCommand);
+
 program
   .command("analyze")
   .description("Analyze test run output for patterns and flaky tests")
